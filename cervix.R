@@ -6,7 +6,7 @@ sigmoid <- function(x){
 cervix_func <- function(nchain, complete_data, incomplete_data, prop_sd){
   #les arguments data_table sont des matrix
   #ordre : beta0, beta, phi_ij, q et les gamma
-  chain <- matrix(NA, nrow = nchain+1, ncol = 9)
+  chain <- matrix(NA, nrow = nchain+1, ncol = 7)
   #ordre d, x, w pour complete et d,w sinon
   
   ## PHASE 1: imputation des données
@@ -105,9 +105,11 @@ cervix_func <- function(nchain, complete_data, incomplete_data, prop_sd){
   
   }
   #Calcul des gamma à partir de la chaîne
-  
-  chain[,8] <- 1/(1 + (1+exp(chain[,1] + chain[,2]))/(1+exp(chain[,1]))*(1-chain[,7])/chain[,7])
-  chain[,9] <- 1/(1 + (1+exp(-chain[,1] - chain[,2]))/(1+exp(-chain[,1]))*(1-chain[,7])/chain[,7])
+  gamma <- matrix(NA, nchain + 1, 2)
+  list_q <- (1-chain[,7])/chain[,7]
+  gamma[,1] <- 1/(1 + (1+exp(chain[,1] + chain[,2]))/(1+exp(chain[,1]))*list_q)
+  gamma[,2] <- 1/(1 + (1+exp(-chain[,1] - chain[,2]))/(1+exp(-chain[,1]))*list_q)
+  chain <- cbind(chain, gamma)
   return(list(chain = chain, acc_rates = acc_rates / nchain))
 }
 #Application
