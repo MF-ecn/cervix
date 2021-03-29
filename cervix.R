@@ -80,6 +80,7 @@ cervix_func <- function(nchain, complete_data, incomplete_data, prop_sd){
     q <- rbeta(1, update_alpha, updata_beta)
     
     #MAJ des deux betas: par prop de M-H
+    acc_rates <- rep(0, 2)
     for (ibeta in 1:2){
       current <- beta[ibeta]
       prop <- rnorm(1, current, prop_sd)
@@ -97,12 +98,17 @@ cervix_func <- function(nchain, complete_data, incomplete_data, prop_sd){
       # browser()
       if (runif(1) < alpha)
         beta <- beta_prop
+        acc_rates[ibeta] <- acc_rates[ibeta] + 1
     }
     #MAJ de la chaîne
     chain[iter+1,] <- c(beta, phis, q)
   
   }
-  return(chain)
+  #Calcul des gamma à partir de la chaîne
+  gamma <- matrix(NA, nrow = nchain+1, ncol = 2)
+  gamma[,1] <- 1/(1 + (1+exp(chain[,1] + chain[,2]))/(1+exp(chain[,1]))*(1-chain[,7])/chain[,7])
+  gamma[,2] <- 1/(1 + (1+exp(-chain[,1] - chain[,2]))/(1+exp(-chain[,1]))*(1-chain[,7])/chain[,7])
+  return(list(chain = chain, gamma = gamma, acc_rates = acc_rates / nchain))
 }
 #Application
 Ni <-1929 
@@ -316,7 +322,7 @@ colnames(complete_data) <- c("d", "x", "w")
 incomplete_data <- matrix(c(di, wi), nrow=Ni, ncol=2, byrow=FALSE)
 colnames(incomplete_data) <- c("d", "w")
 
-chain <- cervix_func(10^3, complete_data, incomplete_data, 10)
+chain <- cervix_func(10^3, complete_data, incomplete_data, 0.1)
 
 par(mfrow = c(3, 3), mar = c(4, 5, 0.5, 0.5))
 ylabs <- c(expression(beta[0]), expression(beta),'phi00', 'phi01', 'phi10', 'phi11', 'q')
