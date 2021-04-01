@@ -14,19 +14,25 @@ cervix_func <- function(nchain, complete_data, incomplete_data, prop_sd){
   Nc <- nrow(complete_data)
   N <- Nc + Ni
   
-  #1.1 calculs des param des bernouilli
+  #1.1 calculs des param des bernoullis à générer
   #ie des probas x_i sachant d_i,w_i
   s <- rep(0, 4) #pour les proba de la loi jointe x,d,w
   s_prime <- rep(0, 4) #pour les proba de la loi jointe d,w
   
+  #on indice s et s_prime en binaire + 1 (l'indice associé c'est 1 + binaire(wi,di) )
+  # RQ: on ne calcule pas les proba mais les effectifs,
+  # la division entre les probas lors de l'utilisation du théorème de Bayes
+  # ie s[1]=n*P(di=0, wi=0), s[2]=n*P(di=0, wi=1), etc...
+  
   for(i in 1:Nc){
     vals <- complete_data[i,]
-    index <- vals[1] + 2*vals[3] + 1
-    s[index] <- s[index] + 1*vals[2]
-    s_prime[index] <- s_prime[index] + 1
+    index <- vals[1] + 2*vals[3] + 1 #cf avant pour l'indice
+    s[index] <- s[index] + 1*vals[2] #on incrémente que si wi=1
+    s_prime[index] <- s_prime[index] + 1 #on a déjà l'indice, pas de condition sur wi ici
   }
   
-  #on utilise s comme vecteur final avec les proba
+  #on utilise s comme vecteur final avec les probas
+  #on applique le théorème de Bayes pour obtenir les probas conditionnelles
   s <- s/s_prime
   #1.2 génération des xi
   x <- rep(NA, Ni)
@@ -45,7 +51,10 @@ cervix_func <- function(nchain, complete_data, incomplete_data, prop_sd){
   
   data_table <- rbind(complete_data, incomplete_data)
   
+  ## PHASE 2: La chaîne
+  
   #on initialise la chaîne
+  #
   chain[1,] <- c(0.5, 0.5, 0.25, 0.25, 0.25, 0.25, 0.5)
   for(iter in 1:nchain){
     beta <- chain[iter, 1:2]
@@ -58,8 +67,10 @@ cervix_func <- function(nchain, complete_data, incomplete_data, prop_sd){
     for (iphi in 1:4){
       for (index in 1:N){
         row <- data_table[index,]
+        #d, x, w
         if (row[3]){
           #on incrémente le compte si la ligne a les xi et di du phi concerné
+          #cf. 
           nw1 <- nw1 + 1*(row[1]==(iphi+1)%%2)*(row[2]==1*(iphi>=3))
         }else{
           nw0 <- nw0 + 1*(row[1]==(iphi+1)%%2)*(row[2]==1*(iphi>=3))  
