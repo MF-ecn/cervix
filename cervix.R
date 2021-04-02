@@ -338,7 +338,40 @@ colnames(incomplete_data) <- c("d", "w")
 out <- cervix_func(10^3, complete_data, incomplete_data, 0.1)
 chain <- out$chain
 
+#--------------------------------------------------------------------------#
+#Graphes et analyse des résultats 
+
 par(mfrow = c(3, 3), mar = c(4, 5, 0.5, 0.5))
-ylabs <- c(expression(beta[0]), expression(beta),'phi00', 'phi01', 'phi10', 'phi11', 'q', 'gamma1', 'gamma2')
-for (j in 1:9)
+ylabs <- c(expression(beta[0]), expression(beta),'phi00', 'phi01', 'phi10', 'phi11', 'q')
+for (j in 1:7)
   plot(chain[,j], type = "l", ylab = ylabs[j])
+
+for (j in 1:7)
+  plot(chain[,j], type = "l", ylab = ylabs[j])
+
+for (j in 1:7)
+  acf(chain[,j], ylab = ylabs[j])
+
+# calculate gamma1 = P(x=1|d=0) and gamma2 = P(x=1|d=1)
+beta0C <- chain[,1]
+betaC <- chain[,2]
+qC <- chain[,7]
+
+gamma1 <- 1 / (1 + (1 + exp(beta0C + betaC)) / (1 + exp(beta0C)) * (1 - qC) / qC)
+gamma2 <- 1 / (1 + (1 + exp(-beta0C - betaC)) / (1 + exp(-beta0C)) * (1 - qC) / qC)
+
+plot(gamma1,type = "l", ylab = 'gamma1')
+plot(gamma2,type = "l", ylab = 'gamma2')
+
+acf(gamma1)
+acf(gamma2)
+
+#Summary Table 
+library(psych)
+psych::describe(chain)
+psych::describe(gamma1)
+psych::describe(gamma2)
+
+## Graphique des densités de Gammas 
+plot(density(gamma1), xlab = "Gamma1 et Gamma2", main = "")
+lines(density(gamma2), xlab = "Gamma2", main = "",col = "orange")
